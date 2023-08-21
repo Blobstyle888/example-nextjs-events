@@ -1,101 +1,130 @@
-import { Fragment, useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
-import useSWR from 'swr';
+import { Fragment, useEffect, useState } from 'react'
+import { useRouter } from 'next/router'
+import useSWR from 'swr'
+import Head from 'next/head'
 
-import { getFilteredEvents } from '../../helpers/api-util';
+import { getFilteredEvents } from '../../helpers/api-util'
 
 import EventList from '../../components/events/event-list'
 import ResultsTitle from '../../components/events/results-title'
-import Button from '../../components/ui/button';
-import ErrorAlert from '../../components/ui/error-alert';
+import Button from '../../components/ui/button'
+import ErrorAlert from '../../components/ui/error-alert'
 
 function FilteredEventsPage(props) {
-    const [loadedEvents, setLoadedEvents] = useState();
-    const router = useRouter();
+  const [loadedEvents, setLoadedEvents] = useState()
+  const router = useRouter()
 
-    const filterData = router.query.slug;
+  const filterData = router.query.slug
 
-    // client side data fetching
-    const fetcher = (url) => fetch(url).then((res) => res.json());
-    const { data, error } = useSWR(
-        "https://nextjs-course-7b2cb-default-rtdb.firebaseio.com/events.json",
-        fetcher
-    );
+  // client side data fetching
+  const fetcher = (url) => fetch(url).then((res) => res.json())
+  const { data, error } = useSWR(
+    'https://nextjs-course-7b2cb-default-rtdb.firebaseio.com/events.json',
+    fetcher
+  )
 
-    useEffect(() => {
-        if (data) {
-            const events = [];
-        
-            for (const key in data) {
-                events.push({
-                    id: key,
-                    ...data[key]
-                });
-            }
-            setLoadedEvents(events);
-        }
-    }, [data]);
+  useEffect(() => {
+    if (data) {
+      const events = []
 
-    if (!loadedEvents) {
-        return <p className="center">Loading....</p>
+      for (const key in data) {
+        events.push({
+          id: key,
+          ...data[key]
+        })
+      }
+      setLoadedEvents(events)
     }
+  }, [data])
 
-    const filteredYear = filterData[0];
-    const filteredMonth = filterData[1];
+  let pageHeader = (
+    <Head>
+      <title>Filtered Events</title>
+      <meta name="description" content="A list of filtered events." />
+    </Head>
+  )
 
-    const numYear = +filteredYear;
-    const numMonth = +filteredMonth;
+  if (!loadedEvents) {
+    return (
+      <Fragment>
+        {pageHeader}
+        <p className="center">Loading....</p>
+      </Fragment>
+    )
+  }
 
-    const filteredEvents = loadedEvents.filter((event) => {
-        const eventDate = new Date(event.date);
-        return eventDate.getFullYear() === numYear && eventDate.getMonth() === numMonth - 1;
-      });
+  const filteredYear = filterData[0]
+  const filteredMonth = filterData[1]
 
-      if (isNaN(numYear) ||
-        isNaN(numMonth) ||
-        numYear > 2023 || 
-        numYear < 2021 ||
-        numMonth < 1 ||
-        numMonth > 12 ||
-        error
-    ) {
-        return  <Fragment>
+  const numYear = +filteredYear
+  const numMonth = +filteredMonth
+
+  pageHeader = (
+    <Head>
+      <title>Filtered Events</title>
+      <meta
+        name="description"
+        content={`All events for ${numMonth}/${numYear}`}
+      />
+    </Head>
+  )
+
+  const filteredEvents = loadedEvents.filter((event) => {
+    const eventDate = new Date(event.date)
+    return (
+      eventDate.getFullYear() === numYear &&
+      eventDate.getMonth() === numMonth - 1
+    )
+  })
+
+  if (
+    isNaN(numYear) ||
+    isNaN(numMonth) ||
+    numYear > 2023 ||
+    numYear < 2021 ||
+    numMonth < 1 ||
+    numMonth > 12 ||
+    error
+  ) {
+    return (
+      <Fragment>
+        {pageHeader}
         <ErrorAlert>
-            <p>Invalid filter. Please adjust your values!</p>
+          <p>Invalid filter. Please adjust your values!</p>
         </ErrorAlert>
         <div className="center">
-            <Button link="/events">
-                Show All Events
-            </Button>
+          <Button link="/events">Show All Events</Button>
         </div>
-        </Fragment>;
-    }
-
-    if (!filteredEvents || filteredEvents.length === 0) {
-        return <Fragment>
-            <ErrorAlert>
-                <p>No events found for the chosen filter!</p>
-            </ErrorAlert>
-            <div className="center">
-                <Button link="/events">
-                    Show All Events
-                </Button>
-            </div>
-            </Fragment>;
-    }
-
-    const date = new Date(numYear, numMonth - 1);
-
-    return (
-        <Fragment>
-            <ResultsTitle date={date} />
-            <EventList items={filteredEvents} />
-        </Fragment>
+      </Fragment>
     )
+  }
+
+  if (!filteredEvents || filteredEvents.length === 0) {
+    return (
+      <Fragment>
+        <ErrorAlert>
+          <p>No events found for the chosen filter!</p>
+        </ErrorAlert>
+        <div className="center">
+          <Button link="/events">Show All Events</Button>
+        </div>
+      </Fragment>
+    )
+  }
+
+  const date = new Date(numYear, numMonth - 1)
+
+  return (
+    <Fragment>
+      {pageHeader}
+      <ResultsTitle date={date} />
+      <EventList items={filteredEvents} />
+    </Fragment>
+  )
 }
 
 // export async function getServerSideProps(context) {
-//     const { params } = context; 
+//     const { params } = context;
 
 //     const filterData = params.slug;
 
@@ -107,10 +136,10 @@ function FilteredEventsPage(props) {
 
 //     if (isNaN(numYear) ||
 //         isNaN(numMonth) ||
-//         numYear > 2023 || 
+//         numYear > 2023 ||
 //         numYear < 2021 ||
 //         numMonth < 1 ||
-//         numMonth > 12 
+//         numMonth > 12
 //     ) {
 //         return {
 //             props: { hasError: true },
@@ -137,4 +166,4 @@ function FilteredEventsPage(props) {
 //     }
 // }
 
-export default FilteredEventsPage;
+export default FilteredEventsPage
